@@ -22,7 +22,7 @@ namespace FileManager
         //当前文件路径
         public string CurFilePath { get; private set; }
 
-        //用户访问的第一个节点，(用链表保存用户历史访问)
+        //用户访问的第一个节点，(用链表保存用户历史访问，从而实现前进后退按钮操作)
         private HistoryListNode firstVisistPathNode = new HistoryListNode();
         //当前路径节点
         private HistoryListNode curPathNode = null;
