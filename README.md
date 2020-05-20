@@ -1,0 +1,3 @@
+# MyFileManage
+WinForm开发的一款类似于Winodws资源管理器
+于2020年5月初期开始开发
