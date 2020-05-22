@@ -43,6 +43,8 @@ namespace FileManager
             //界面显示
             TreeViewShow treeViewShow = new TreeViewShow();
             treeViewShow.InitDisplay(ref this.deviceTreeView);
+            //设置本地磁盘C为默认点击状态
+            deviceTreeView.SelectedNode = deviceTreeView.Nodes[1];
         }
 
         private void FileManage_SizeChanged(object sender, EventArgs e)
@@ -98,6 +100,7 @@ namespace FileManager
                 curPathNode = firstVisistPathNode;
 
                 curSelectedNode = e.Node;
+                
                 isInitializeDeviceTreeView = false;
                 ShowFilesList(curFilePath, true);
             }
@@ -176,6 +179,7 @@ namespace FileManager
 
         public void ShowFilesList(string path, bool isRecord)
         {
+            
             if (isRecord)
             {
                 //保存用户的历史访问路径
@@ -192,6 +196,45 @@ namespace FileManager
 
             //清空ListView
             fileListView.Items.Clear();
+
+            //如果当前为历史访问时
+            if(path == @"最近访问")
+            {
+                
+                //得到最近访问文件/夹的枚举集合
+                var recentFile = RecentFilesUtil.GetRecentFiles();
+
+                //遍历，将文件显示到ListView
+                foreach(var file in recentFile)
+                {
+                    if (File.Exists(file))
+                    {
+                        //当为文件时
+                        FileInfo fileInfo = new FileInfo(file);
+                        //显示文件相关信息
+                        ListViewItem item = fileListView.Items.Add(fileInfo.Name);
+                        item.Tag = fileInfo.FullName;
+                        item.SubItems.Add(fileInfo.LastWriteTime.ToString());
+                        item.SubItems.Add(fileInfo.Extension + "文件");
+                        item.SubItems.Add(FileDetailInfoForm.ShowFileSize(fileInfo.Length).Split('(')[0]);
+                    }
+                    else if(Directory.Exists(file))
+                    {
+                        //为目录时
+                        DirectoryInfo dirInfo = new DirectoryInfo(file);
+
+                        ListViewItem item = fileListView.Items.Add(dirInfo.Name, (int)IconsIndexes.Folder);
+                        item.Tag = dirInfo.FullName;
+                        item.SubItems.Add(dirInfo.LastWriteTime.ToString());
+                        item.SubItems.Add("文件夹");
+                        item.SubItems.Add("");
+
+                    }
+
+                }
+            }
+
+
             try
             {
                 DirectoryInfo directoryInfo = new DirectoryInfo(path);

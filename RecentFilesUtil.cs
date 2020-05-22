@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;              //Directory 目录 
 using System.Reflection;      //BindingFlags 枚举
+//参照CSDN博客：https://blog.csdn.net/bruce135lee/article/details/79675712
 namespace FileManager
 {
     public class RecentFilesUtil
@@ -34,11 +35,11 @@ namespace FileManager
             //获取电脑"Recent"文件夹下的文件名（全路径）
             return from file in Directory.EnumerateFiles(recentFolder)
 
-            //只取快捷方式类型文件
-            where Path.GetExtension(file) == ".lnk"
+                //只取快捷方式类型文件
+                where Path.GetExtension(file) == ".lnk"
 
-            //取出对应的真实路径
-            select GetShortcutTargetFilePath(file);
+                //取出对应的真实路径
+                select GetShortcutTargetFilePath(file);
         }
     }
 }
