@@ -13,5 +13,12 @@ namespace FileManager
         public string Path { set; get; }
         public HistoryListNode PreNode { set; get; }
         public HistoryListNode NextNode { set; get; }
+
+        public HistoryListNode()
+        {
+            Path = null;
+            PreNode = null;
+            NextNode = null;
+        }
     }
 }

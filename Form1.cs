@@ -17,10 +17,10 @@ namespace FileManager
     {
         //当前路径
         private string curFilePath = "";
-        //是否第一次初始化目录树
+
+        //是否第一次初始化目录树,用于最开始显示那个盘的文件
         private bool isInitializeDeviceTreeView = true;
-        //当前文件路径
-        public string CurFilePath { get; private set; }
+        
 
         //用户访问的第一个节点，(用链表保存用户历史访问，从而实现前进后退按钮操作)
         private HistoryListNode firstVisistPathNode = new HistoryListNode();
@@ -87,18 +87,19 @@ namespace FileManager
         //选定树节点
         private void deviceTreeView_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            //第一次初始化
+            //第一次初始化,首先显示C盘的文件夹在ListView中
             if (this.isInitializeDeviceTreeView)
             {
-                CurFilePath = "最近访问";
-                tscbAddress.Text = CurFilePath;
+                curFilePath = @"C:\";
+                tscbAddress.Text = curFilePath;
 
                 //保存用户的历史路径的第一个路径
-                firstVisistPathNode.Path = CurFilePath;
+                firstVisistPathNode.Path = curFilePath;
                 curPathNode = firstVisistPathNode;
 
                 curSelectedNode = e.Node;
                 isInitializeDeviceTreeView = false;
+                ShowFilesList(curFilePath, true);
             }
             else
             {
@@ -111,43 +112,40 @@ namespace FileManager
         //后退按钮事件处理
         private void tsbBack_Click(object sender, EventArgs e)
         {
-            //没有进行任何操作/回到顶层,按钮不可用
+            //当前路径节点为顶层时
             if (curPathNode == firstVisistPathNode)
             {
-                this.tsbBack.Enabled = false;
+                return;
             }
             else
             {
-                
-                string prePath = curPathNode.Path;
+                string prePath = curPathNode.PreNode.Path;
 
                 ShowFilesList(prePath, false);
                 curPathNode = curPathNode.PreNode;
-
-                //前进按钮可用
-                tsbPrev.Enabled = true;
-
             }
 
         }
         //前进按钮事件处理
         private void tsbPrev_Click(object sender, EventArgs e)
         {
-            //为空则不可点击
+            //未进行任何操作时
             if(curPathNode.NextNode == null)
             {
-                this.tsbPrev.Enabled = false;
+                return;
             }
             else
             {
                 //当前访问路径的下一个节点不为空
-                string path = curPathNode.NextNode.Path;
-                ShowFilesList(path, true);
+                string nextPath = curPathNode.NextNode.Path;
+                ShowFilesList(nextPath, false);
                 curPathNode = curPathNode.NextNode;
-
-                //后退按钮可用
-                tsbBack.Enabled = true;
             }
+        }
+        //刷新按钮
+        private void tsbRefresh_Click(object sender, EventArgs e)
+        {
+            ShowFilesList(curFilePath, false);
         }
 
         //返回上一级事件处理
@@ -172,6 +170,8 @@ namespace FileManager
                 return;
             }
         }
+
+
 
 
         public void ShowFilesList(string path, bool isRecord)
@@ -312,6 +312,6 @@ namespace FileManager
             }
         }
 
-       
+
     }
 }

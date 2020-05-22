@@ -351,6 +351,7 @@
             this.tsbRefresh.Size = new System.Drawing.Size(27, 29);
             this.tsbRefresh.Text = "toolStripButton1";
             this.tsbRefresh.ToolTipText = "刷新";
+            this.tsbRefresh.Click += new System.EventHandler(this.tsbRefresh_Click);
             // 
             // toolStripSeparator3
             // 
