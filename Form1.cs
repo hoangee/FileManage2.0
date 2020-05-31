@@ -34,7 +34,7 @@ namespace FileManager
         public FileManage()
         {
             InitializeComponent();
-            System.Windows.Forms.Control.CheckForIllegalCrossThreadCalls = false;
+            //System.Windows.Forms.Control.CheckForIllegalCrossThreadCalls = false;
         }
 
         //界面导入显示
@@ -89,7 +89,7 @@ namespace FileManager
         //选定树节点
         private void deviceTreeView_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            //第一次初始化,首先显示C盘的文件夹在ListView中
+            //第一次初始化,显示C盘的文件夹在ListView中
             if (this.isInitializeDeviceTreeView)
             {
                 curFilePath = @"C:\";
@@ -108,7 +108,11 @@ namespace FileManager
             {
                 //显示硬盘的目录在ListView
                 curSelectedNode = e.Node;
+                //由于获取系统历史文件访问目录，使用同步方法，会造成界面阻塞，所以在点击历史访问时候使用异步操作
+
                 ShowFilesList(e.Node.Tag.ToString(), true);
+
+                
             }
         }
 
@@ -197,114 +201,148 @@ namespace FileManager
             //清空ListView
             fileListView.Items.Clear();
 
+#if true
             //如果当前为历史访问时
             if(path == @"最近访问")
             {
-                
                 //得到最近访问文件/夹的枚举集合
                 var recentFile = RecentFilesUtil.GetRecentFiles();
 
                 //遍历，将文件显示到ListView
-                foreach(var file in recentFile)
+                Action action = new Action(() =>
                 {
-                    if (File.Exists(file))
+                    foreach (var file in recentFile)
                     {
-                        //当为文件时
-                        FileInfo fileInfo = new FileInfo(file);
-                        //显示文件相关信息
-                        ListViewItem item = fileListView.Items.Add(fileInfo.Name);
-                        item.Tag = fileInfo.FullName;
-                        item.SubItems.Add(fileInfo.LastWriteTime.ToString());
-                        item.SubItems.Add(fileInfo.Extension + "文件");
-                        item.SubItems.Add(FileDetailInfoForm.ShowFileSize(fileInfo.Length).Split('(')[0]);
-                    }
-                    else if(Directory.Exists(file))
-                    {
-                        //为目录时
-                        DirectoryInfo dirInfo = new DirectoryInfo(file);
+                        if (File.Exists(file))
+                        {
+                            //当为文件时
+                            FileInfo fileInfo = new FileInfo(file);
 
+                            ListViewItem item = fileListView.Items.Add(fileInfo.Name);
+
+                            //为exe文件或无拓展名
+                            if (fileInfo.Extension == ".exe" || fileInfo.Extension == "")
+                            {
+                                //通过当前系统获得文件相应图标
+                                Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
+
+                                //因为不同的exe文件一般图标都不相同，所以不能按拓展名存取图标，应按文件名存取图标
+                                fileImageList.Images.Add(fileInfo.Name, fileIcon);
+
+                                item.ImageKey = fileInfo.Name;
+                            }
+                            //其他文件
+                            else
+                            {
+                                if (!fileImageList.Images.ContainsKey(fileInfo.Extension))
+                                {
+                                    Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
+
+                                    //因为类型（除了exe）相同的文件，图标相同，所以可以按拓展名存取图标
+                                    fileImageList.Images.Add(fileInfo.Extension, fileIcon);
+                                }
+
+                                item.ImageKey = fileInfo.Extension;
+                            }
+                            //显示文件相关信息
+
+                            item.Tag = fileInfo.FullName;
+                            item.SubItems.Add(fileInfo.LastWriteTime.ToString());
+                            item.SubItems.Add(fileInfo.Extension + "文件");
+                            item.SubItems.Add(FileDetailInfoForm.ShowFileSize(fileInfo.Length).Split('(')[0]);
+                        }
+                        else if (Directory.Exists(file))
+                        {
+                            //为目录时
+                            DirectoryInfo dirInfo = new DirectoryInfo(file);
+
+                            ListViewItem item = fileListView.Items.Add(dirInfo.Name, (int)IconsIndexes.Folder);
+                            item.Tag = dirInfo.FullName;
+                            item.SubItems.Add(dirInfo.LastWriteTime.ToString());
+                            item.SubItems.Add("文件夹");
+                            item.SubItems.Add("");
+
+                        }
+
+                    }
+                });
+
+                fileListView.BeginInvoke(action);
+               
+            }
+            else
+            {
+                //得到硬盘目录下的文件夹及文件。
+                try
+                {
+                    DirectoryInfo directoryInfo = new DirectoryInfo(path);
+                    DirectoryInfo[] directoryInfos = directoryInfo.GetDirectories();
+                    FileInfo[] fileInfos = directoryInfo.GetFiles();
+
+                    //删除ilstIcons(ImageList)中的exe文件的图标，释放ilstIcons的空间
+                    foreach (ListViewItem item in fileListView.Items)
+                    {
+                        if (item.Text.EndsWith(".exe"))
+                        {
+                            fileImageList.Images.RemoveByKey(item.Text);
+                        }
+                    }
+
+                    //列出所有文件夹
+                    foreach (DirectoryInfo dirInfo in directoryInfos)
+                    {
                         ListViewItem item = fileListView.Items.Add(dirInfo.Name, (int)IconsIndexes.Folder);
                         item.Tag = dirInfo.FullName;
                         item.SubItems.Add(dirInfo.LastWriteTime.ToString());
                         item.SubItems.Add("文件夹");
                         item.SubItems.Add("");
-
                     }
 
-                }
-            }
-
-
-            try
-            {
-                DirectoryInfo directoryInfo = new DirectoryInfo(path);
-                DirectoryInfo[] directoryInfos = directoryInfo.GetDirectories();
-                FileInfo[] fileInfos = directoryInfo.GetFiles();
-
-                //删除ilstIcons(ImageList)中的exe文件的图标，释放ilstIcons的空间
-                foreach (ListViewItem item in fileListView.Items)
-                {
-                    if (item.Text.EndsWith(".exe"))
+                    //列出所有文件
+                    foreach (FileInfo fileInfo in fileInfos)
                     {
-                        fileImageList.Images.RemoveByKey(item.Text);
-                    }
-                }
+                        ListViewItem item = fileListView.Items.Add(fileInfo.Name);
 
-
-
-                //列出所有文件夹
-                foreach (DirectoryInfo dirInfo in directoryInfos)
-                {
-                    ListViewItem item = fileListView.Items.Add(dirInfo.Name, (int)IconsIndexes.Folder);
-                    item.Tag = dirInfo.FullName;
-                    item.SubItems.Add(dirInfo.LastWriteTime.ToString());
-                    item.SubItems.Add("文件夹");
-                    item.SubItems.Add("");
-                }
-
-                //列出所有文件
-                foreach (FileInfo fileInfo in fileInfos)
-                {
-                    ListViewItem item = fileListView.Items.Add(fileInfo.Name);
-
-                    //为exe文件或无拓展名
-                    if (fileInfo.Extension == ".exe" || fileInfo.Extension == "")
-                    {
-                        //通过当前系统获得文件相应图标
-                        Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
-
-                        //因为不同的exe文件一般图标都不相同，所以不能按拓展名存取图标，应按文件名存取图标
-                        fileImageList.Images.Add(fileInfo.Name, fileIcon);
-
-                        item.ImageKey = fileInfo.Name;
-                    }
-                    //其他文件
-                    else
-                    {
-                        if (!fileImageList.Images.ContainsKey(fileInfo.Extension))
+                        //为exe文件或无拓展名
+                        if (fileInfo.Extension == ".exe" || fileInfo.Extension == "")
                         {
+                            //通过当前系统获得文件相应图标
                             Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
 
-                            //因为类型（除了exe）相同的文件，图标相同，所以可以按拓展名存取图标
-                            fileImageList.Images.Add(fileInfo.Extension, fileIcon);
+                            //因为不同的exe文件一般图标都不相同，所以不能按拓展名存取图标，应按文件名存取图标
+                            fileImageList.Images.Add(fileInfo.Name, fileIcon);
+
+                            item.ImageKey = fileInfo.Name;
+                        }
+                        //其他文件
+                        else
+                        {
+                            if (!fileImageList.Images.ContainsKey(fileInfo.Extension))
+                            {
+                                Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
+
+                                //因为类型（除了exe）相同的文件，图标相同，所以可以按拓展名存取图标
+                                fileImageList.Images.Add(fileInfo.Extension, fileIcon);
+                            }
+
+                            item.ImageKey = fileInfo.Extension;
                         }
 
-                        item.ImageKey = fileInfo.Extension;
+                        item.Tag = fileInfo.FullName;
+                        item.SubItems.Add(fileInfo.LastWriteTime.ToString());
+                        item.SubItems.Add(fileInfo.Extension + "文件");
+                        item.SubItems.Add(FileDetailInfoForm.ShowFileSize(fileInfo.Length).Split('(')[0]);
                     }
 
-                    item.Tag = fileInfo.FullName;
-                    item.SubItems.Add(fileInfo.LastWriteTime.ToString());
-                    item.SubItems.Add(fileInfo.Extension + "文件");
-                    item.SubItems.Add(FileDetailInfoForm.ShowFileSize(fileInfo.Length).Split('(')[0]);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
 
             }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-
-
+#endif
+            
 
             //更新当前路径
             curFilePath = path;
@@ -353,6 +391,90 @@ namespace FileManager
                 }
 
             }
+        }
+
+        private void ShowHisFileTaskFunc()
+        {
+            //保存用户的历史访问路径
+            HistoryListNode newNode = new HistoryListNode();
+            newNode.Path = @"历史访问";
+            curPathNode.NextNode = newNode;
+            newNode.PreNode = curPathNode;
+
+            curPathNode = newNode;
+
+            //开始数据更新
+            fileListView.BeginUpdate();
+
+            //清空ListView
+            fileListView.Items.Clear();
+
+            //得到最近访问文件/夹的枚举集合
+            var recentFile = RecentFilesUtil.GetRecentFiles();
+
+            foreach (var file in recentFile)
+            {
+                if (File.Exists(file))
+                {
+                    //当为文件时
+                    FileInfo fileInfo = new FileInfo(file);
+
+                    ListViewItem item = fileListView.Items.Add(fileInfo.Name);
+
+                    //为exe文件或无拓展名
+                    if (fileInfo.Extension == ".exe" || fileInfo.Extension == "")
+                    {
+                        //通过当前系统获得文件相应图标
+                        Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
+
+                        //因为不同的exe文件一般图标都不相同，所以不能按拓展名存取图标，应按文件名存取图标
+                        fileImageList.Images.Add(fileInfo.Name, fileIcon);
+
+                        item.ImageKey = fileInfo.Name;
+                    }
+                    //其他文件
+                    else
+                    {
+                        if (!fileImageList.Images.ContainsKey(fileInfo.Extension))
+                        {
+                            Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
+
+                            //因为类型（除了exe）相同的文件，图标相同，所以可以按拓展名存取图标
+                            fileImageList.Images.Add(fileInfo.Extension, fileIcon);
+                        }
+
+                        item.ImageKey = fileInfo.Extension;
+                    }
+                    //显示文件相关信息
+
+                    item.Tag = fileInfo.FullName;
+                    item.SubItems.Add(fileInfo.LastWriteTime.ToString());
+                    item.SubItems.Add(fileInfo.Extension + "文件");
+                    item.SubItems.Add(FileDetailInfoForm.ShowFileSize(fileInfo.Length).Split('(')[0]);
+                }
+                else if (Directory.Exists(file))
+                {
+                    //为目录时
+                    DirectoryInfo dirInfo = new DirectoryInfo(file);
+
+                    ListViewItem item = fileListView.Items.Add(dirInfo.Name, (int)IconsIndexes.Folder);
+                    item.Tag = dirInfo.FullName;
+                    item.SubItems.Add(dirInfo.LastWriteTime.ToString());
+                    item.SubItems.Add("文件夹");
+                    item.SubItems.Add("");
+                }
+            }
+            //更新当前路径
+            curFilePath = @"历史访问";
+
+            //更新地址栏
+            tscbAddress.Text = curFilePath;
+
+            //更新状态栏
+            belowStatusStrip.Text = fileListView.Items.Count + " 个项目";
+
+            //结束数据更新
+            fileListView.EndUpdate();
         }
 
 
