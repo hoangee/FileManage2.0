@@ -89,8 +89,10 @@
             this.cnewfolToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cownerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cproToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.belowTsslbNum = new System.Windows.Forms.ToolStripStatusLabel();
             this.operatorMenu.SuspendLayout();
             this.toolStripOperator.SuspendLayout();
+            this.belowStatusStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).BeginInit();
             this.mainSplitContainer.Panel1.SuspendLayout();
             this.mainSplitContainer.Panel2.SuspendLayout();
@@ -364,13 +366,18 @@
             this.tscbSearch.Name = "tscbSearch";
             this.tscbSearch.Size = new System.Drawing.Size(150, 28);
             this.tscbSearch.Text = "快速搜索";
+            this.tscbSearch.Enter += new System.EventHandler(this.tscbSearch_Enter);
+            this.tscbSearch.Leave += new System.EventHandler(this.tscbSearch_Leave);
+            this.tscbSearch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.tscbSearch_KeyDown);
             // 
             // belowStatusStrip
             // 
             this.belowStatusStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
-            this.belowStatusStrip.Location = new System.Drawing.Point(0, 631);
+            this.belowStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.belowTsslbNum});
+            this.belowStatusStrip.Location = new System.Drawing.Point(0, 628);
             this.belowStatusStrip.Name = "belowStatusStrip";
-            this.belowStatusStrip.Size = new System.Drawing.Size(1182, 22);
+            this.belowStatusStrip.Size = new System.Drawing.Size(1182, 25);
             this.belowStatusStrip.TabIndex = 2;
             // 
             // mainSplitContainer
@@ -386,7 +393,7 @@
             // mainSplitContainer.Panel2
             // 
             this.mainSplitContainer.Panel2.Controls.Add(this.fileListView);
-            this.mainSplitContainer.Size = new System.Drawing.Size(1182, 571);
+            this.mainSplitContainer.Size = new System.Drawing.Size(1182, 568);
             this.mainSplitContainer.SplitterDistance = 275;
             this.mainSplitContainer.TabIndex = 3;
             // 
@@ -399,7 +406,7 @@
             this.deviceTreeView.Location = new System.Drawing.Point(0, 0);
             this.deviceTreeView.Name = "deviceTreeView";
             this.deviceTreeView.SelectedImageIndex = 0;
-            this.deviceTreeView.Size = new System.Drawing.Size(275, 571);
+            this.deviceTreeView.Size = new System.Drawing.Size(275, 568);
             this.deviceTreeView.TabIndex = 0;
             this.deviceTreeView.BeforeExpand += new System.Windows.Forms.TreeViewCancelEventHandler(this.deviceTreeView_BeforeExpand);
             this.deviceTreeView.AfterExpand += new System.Windows.Forms.TreeViewEventHandler(this.deviceTreeView_AfterExpand);
@@ -431,7 +438,7 @@
             this.fileListView.Location = new System.Drawing.Point(0, 0);
             this.fileListView.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.fileListView.Name = "fileListView";
-            this.fileListView.Size = new System.Drawing.Size(903, 571);
+            this.fileListView.Size = new System.Drawing.Size(903, 568);
             this.fileListView.SmallImageList = this.fileImageList;
             this.fileListView.TabIndex = 0;
             this.fileListView.UseCompatibleStateImageBehavior = false;
@@ -578,6 +585,12 @@
             this.cproToolStripMenuItem.Size = new System.Drawing.Size(153, 24);
             this.cproToolStripMenuItem.Text = "属性";
             // 
+            // belowTsslbNum
+            // 
+            this.belowTsslbNum.Name = "belowTsslbNum";
+            this.belowTsslbNum.Size = new System.Drawing.Size(167, 20);
+            this.belowTsslbNum.Text = "toolStripStatusLabel1";
+            // 
             // FileManage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
@@ -599,6 +612,8 @@
             this.operatorMenu.PerformLayout();
             this.toolStripOperator.ResumeLayout(false);
             this.toolStripOperator.PerformLayout();
+            this.belowStatusStrip.ResumeLayout(false);
+            this.belowStatusStrip.PerformLayout();
             this.mainSplitContainer.Panel1.ResumeLayout(false);
             this.mainSplitContainer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).EndInit();
@@ -670,6 +685,7 @@
         private System.Windows.Forms.ToolStripMenuItem cnewfolToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem cownerToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem cproToolStripMenuItem;
+        private System.Windows.Forms.ToolStripStatusLabel belowTsslbNum;
     }
 }
 

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Diagnostics;
+using System.Security.AccessControl;
 
 namespace FileManager
 {
@@ -29,6 +30,12 @@ namespace FileManager
 
         //当前选中的树节点（目录节点）
         private TreeNode curSelectedNode = null;
+
+        //搜索的文件名字
+        private string searchFileName = "";
+
+        //存放搜索结果的List
+        List<SearchInfo> searchInfoList = new List<SearchInfo>();
 
         //主窗口显示
         public FileManage()
@@ -351,7 +358,7 @@ namespace FileManager
             tscbAddress.Text = curFilePath;
 
             //更新状态栏
-            belowStatusStrip.Text = fileListView.Items.Count + " 个项目";
+            belowTsslbNum.Text = fileListView.Items.Count + " 个项目";
 
             //结束数据更新
             fileListView.EndUpdate();
@@ -446,7 +453,6 @@ namespace FileManager
                         item.ImageKey = fileInfo.Extension;
                     }
                     //显示文件相关信息
-
                     item.Tag = fileInfo.FullName;
                     item.SubItems.Add(fileInfo.LastWriteTime.ToString());
                     item.SubItems.Add(fileInfo.Extension + "文件");
@@ -471,12 +477,175 @@ namespace FileManager
             tscbAddress.Text = curFilePath;
 
             //更新状态栏
-            belowStatusStrip.Text = fileListView.Items.Count + " 个项目";
+            belowTsslbNum.Text = fileListView.Items.Count + " 个项目";
 
             //结束数据更新
             fileListView.EndUpdate();
         }
 
+        private void tscbSearch_Enter(object sender, EventArgs e)
+        {
+            tscbSearch.Text = "";
+        }
 
+        private void tscbSearch_Leave(object sender, EventArgs e)
+        {
+            tscbSearch.Text = "快速搜索";
+        }
+
+        private void tscbSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            //开始文件搜索
+
+            //得到回车输入的文件名
+            if (e.KeyCode == Keys.Enter)
+            {
+                searchInfoList.Clear();
+                string enterFilename = tscbSearch.Text;
+                //判空
+                if (string.IsNullOrEmpty(enterFilename))
+                {
+                    //弹出对话框
+                    MessageBoxButtons messageBoxButtons = MessageBoxButtons.OK;
+                    DialogResult dialog = MessageBox.Show("正确输入搜索文件名", "提示", messageBoxButtons);
+                    return;
+
+                }
+
+                searchFileName = enterFilename;
+                Search(curFilePath);
+
+                ShowSearchRes();
+
+            }
+        }
+
+        private void ShowSearchRes()
+        {
+            //开始数据更新
+            fileListView.BeginUpdate();
+
+            //清空ListView
+            fileListView.Items.Clear();
+
+            lock (searchInfoList)
+            {
+                //foreach (var info in searchInfoList)
+                for(int i = 0; i < searchInfoList.Count; i++)
+                {
+                    Console.WriteLine("searchInfoList:{0}", searchInfoList[i]);
+                    //是文件的话
+                    if (searchInfoList[i].IsFile)
+                    {
+                        FileInfo fileInfo = new FileInfo(searchInfoList[i].Name);
+
+                        ListViewItem item = fileListView.Items.Add(fileInfo.Name);
+                        //为exe文件或无拓展名
+                        if (fileInfo.Extension == ".exe" || fileInfo.Extension == "")
+                        {
+                            //通过当前系统获得文件相应图标
+                            Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
+                            //因为不同的exe文件一般图标都不相同，所以不能按拓展名存取图标，应按文件名存取图标
+                            fileImageList.Images.Add(fileInfo.Name, fileIcon);
+                            item.ImageKey = fileInfo.Name;
+
+                        }
+                        else
+                        {
+                            if (!fileImageList.Images.ContainsKey(fileInfo.Extension))
+                            {
+                                Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
+
+                                //因为类型（除了exe）相同的文件，图标相同，所以可以按拓展名存取图标
+                                fileImageList.Images.Add(fileInfo.Extension, fileIcon);
+                            }
+
+                            item.ImageKey = fileInfo.Extension;
+                        }
+                        item.Tag = fileInfo.FullName;
+                        item.SubItems.Add(fileInfo.LastWriteTimeUtc.ToString());
+                        item.SubItems.Add(fileInfo.Extension + "文件");
+                        item.SubItems.Add(FileDetailInfoForm.ShowFileSize(fileInfo.Length).Split('(')[0]);
+
+                    }
+                    //是文件夹
+                    else
+                    {
+                        DirectoryInfo dirInfo = new DirectoryInfo(searchInfoList[i].Name);
+                        ListViewItem item = fileListView.Items.Add(dirInfo.Name, (int)IconsIndexes.Folder);
+                        item.Tag = dirInfo.FullName;
+                        item.SubItems.Add(dirInfo.LastWriteTimeUtc.ToString());
+                        item.SubItems.Add("文件夹");
+                        item.SubItems.Add("");
+                    }
+                    fileListView.EndUpdate();
+                }
+            }
+
+        }
+
+
+        //搜索委托函数
+        public void Search(Object obj)
+        {
+            string path = obj.ToString();
+            try
+            {
+                //待搜索路径下的目录
+                DirectoryInfo directoryInfo = new DirectoryInfo(path);
+
+                //待搜索路径下的文件
+                FileInfo[] fileInfos = directoryInfo.GetFiles();
+                //搜索文件
+                if (fileInfos.Length > 0)
+                {
+                    foreach (FileInfo fileInfo in fileInfos)
+                    {
+                        try
+                        {
+                            //匹配文件名
+                            if (fileInfo.Name.Split('.')[0].Contains(searchFileName))
+                            {
+                                SearchInfo searchInfo = new SearchInfo(fileInfo.FullName, true);
+                                searchInfoList.Add(searchInfo);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            continue;
+                        }
+                    }
+                }
+                //待搜索路径下的子文件夹
+                DirectoryInfo[] directoryInfos = directoryInfo.GetDirectories();
+
+                //搜索文件夹
+                if (directoryInfos.Length > 0)
+                {
+                    foreach (DirectoryInfo dirInfo in directoryInfos)
+                    {
+                        try
+                        {
+                            if (dirInfo.Name.Contains(searchFileName))
+                            {
+                                SearchInfo searchInfo = new SearchInfo(dirInfo.FullName, false);
+                                searchInfoList.Add(searchInfo);
+                            }
+                            else
+                            {
+                                //继续回调搜索文件
+                                ThreadPool.QueueUserWorkItem(new WaitCallback(Search), dirInfo.FullName);
+                            }
+                        }
+                        catch (Exception e)
+                        { }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine("{0}", e.Message);
+            }
+        }
     }
 }
