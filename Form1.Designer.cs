@@ -64,6 +64,7 @@
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.tscbSearch = new System.Windows.Forms.ToolStripComboBox();
             this.belowStatusStrip = new System.Windows.Forms.StatusStrip();
+            this.belowTsslbNum = new System.Windows.Forms.ToolStripStatusLabel();
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
             this.deviceTreeView = new System.Windows.Forms.TreeView();
             this.fileImageList = new System.Windows.Forms.ImageList(this.components);
@@ -89,7 +90,6 @@
             this.cnewfolToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cownerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cproToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.belowTsslbNum = new System.Windows.Forms.ToolStripStatusLabel();
             this.operatorMenu.SuspendLayout();
             this.toolStripOperator.SuspendLayout();
             this.belowStatusStrip.SuspendLayout();
@@ -129,25 +129,28 @@
             // newFolderToolStripMenuItem
             // 
             this.newFolderToolStripMenuItem.Name = "newFolderToolStripMenuItem";
-            this.newFolderToolStripMenuItem.Size = new System.Drawing.Size(159, 26);
+            this.newFolderToolStripMenuItem.Size = new System.Drawing.Size(216, 26);
             this.newFolderToolStripMenuItem.Text = "新建文件夹";
+            this.newFolderToolStripMenuItem.Click += new System.EventHandler(this.newFolderToolStripMenuItem_Click);
             // 
             // newFileToolStripMenuItem
             // 
             this.newFileToolStripMenuItem.Name = "newFileToolStripMenuItem";
-            this.newFileToolStripMenuItem.Size = new System.Drawing.Size(159, 26);
+            this.newFileToolStripMenuItem.Size = new System.Drawing.Size(216, 26);
             this.newFileToolStripMenuItem.Text = "新建文件";
+            this.newFileToolStripMenuItem.Click += new System.EventHandler(this.newFileToolStripMenuItem_Click);
             // 
             // ownerToolStripMenuItem
             // 
             this.ownerToolStripMenuItem.Name = "ownerToolStripMenuItem";
-            this.ownerToolStripMenuItem.Size = new System.Drawing.Size(159, 26);
+            this.ownerToolStripMenuItem.Size = new System.Drawing.Size(216, 26);
             this.ownerToolStripMenuItem.Text = "权限管理";
+            this.ownerToolStripMenuItem.Click += new System.EventHandler(this.ownerToolStripMenuItem_Click);
             // 
             // propertyToolStripMenuItem1
             // 
             this.propertyToolStripMenuItem1.Name = "propertyToolStripMenuItem1";
-            this.propertyToolStripMenuItem1.Size = new System.Drawing.Size(159, 26);
+            this.propertyToolStripMenuItem1.Size = new System.Drawing.Size(216, 26);
             this.propertyToolStripMenuItem1.Text = "属性";
             // 
             // editToolStripMenuItem
@@ -380,6 +383,12 @@
             this.belowStatusStrip.Size = new System.Drawing.Size(1182, 25);
             this.belowStatusStrip.TabIndex = 2;
             // 
+            // belowTsslbNum
+            // 
+            this.belowTsslbNum.Name = "belowTsslbNum";
+            this.belowTsslbNum.Size = new System.Drawing.Size(167, 20);
+            this.belowTsslbNum.Text = "toolStripStatusLabel1";
+            // 
             // mainSplitContainer
             // 
             this.mainSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -584,12 +593,6 @@
             this.cproToolStripMenuItem.Name = "cproToolStripMenuItem";
             this.cproToolStripMenuItem.Size = new System.Drawing.Size(153, 24);
             this.cproToolStripMenuItem.Text = "属性";
-            // 
-            // belowTsslbNum
-            // 
-            this.belowTsslbNum.Name = "belowTsslbNum";
-            this.belowTsslbNum.Size = new System.Drawing.Size(167, 20);
-            this.belowTsslbNum.Text = "toolStripStatusLabel1";
             // 
             // FileManage
             // 

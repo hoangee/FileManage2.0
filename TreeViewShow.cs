@@ -95,7 +95,7 @@ namespace FileManager
             }
         }
 
-        public void LoadChildNodes(TreeNode node)
+        public static void LoadChildNodes(TreeNode node)
         {
             try
             {

@@ -89,8 +89,7 @@ namespace FileManager
         //树节点打开前导入子节点
         private void deviceTreeView_BeforeExpand(object sender, TreeViewCancelEventArgs e)
         {
-            TreeViewShow treeViewShow = new TreeViewShow();
-            treeViewShow.LoadChildNodes(e.Node);
+            TreeViewShow.LoadChildNodes(e.Node);
         }
 
         //选定树节点
@@ -646,6 +645,102 @@ namespace FileManager
             {
                 Console.WriteLine("{0}", e.Message);
             }
+        }
+
+        private void newFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //菜单栏新建文件夹
+            CreateFolder();
+        }
+
+        private void CreateFolder()
+        {
+            if (curFilePath == @"最近访问")
+            {
+                MessageBox.Show("不能在当前路径下新建文件夹！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                int num = 1;
+                string path = Path.Combine(curFilePath, "新建文件夹");
+                string newFolderPath = path;
+
+                while (Directory.Exists(newFolderPath))
+                {
+                    newFolderPath = path + "(" + num + ")";
+                    num++;
+                }
+
+                Directory.CreateDirectory(newFolderPath);
+
+                ListViewItem item = fileListView.Items.Add("新建文件夹" + (num == 1 ? "" : "(" + (num - 1) + ")"), (int)IconsIndexes.Folder);
+
+                //真正的路径
+                item.Tag = newFolderPath;
+
+                //刷新左边的目录树
+                TreeViewShow.LoadChildNodes(curSelectedNode);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        //创建文件响应
+        private void newFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CreateFile();
+        }
+        //创建文件
+        private void CreateFile()
+        {
+            //最近访问不可以增加新文件
+            if(curFilePath == @"最近访问")
+            {
+                MessageBox.Show("不能在当前路径下新建文件！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            //创建文件窗口显示
+            NewFileForm newFileForm = new NewFileForm(curFilePath, this);
+            newFileForm.Show();
+
+        }
+
+        //显示权限管理窗口
+        private void ShowPrivilegeForm()
+        {
+            //右边窗体中没有文件/文件夹被选中
+            if (fileListView.SelectedItems.Count == 0)
+            {
+                if (curFilePath == "最近访问")
+                {
+                    MessageBox.Show("不能查看当前路径的权限管理！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                PrivilegeForm privilegeForm = new PrivilegeForm(curFilePath);
+
+                //显示对于当前文件夹的权限管理界面
+                privilegeForm.Show();
+            }
+            //右边窗体中有文件/文件夹被选中
+            else
+            {
+                //显示被选中的第一个文件/文件夹的权限管理界面
+                PrivilegeForm privilegeForm = new PrivilegeForm(fileListView.SelectedItems[0].Tag.ToString());
+
+                privilegeForm.Show();
+            }
+
+        }
+
+        private void ownerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ShowPrivilegeForm();
         }
     }
 }
