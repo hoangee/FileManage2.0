@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Diagnostics;
 using System.Security.AccessControl;
+using Microsoft.VisualBasic.Devices;
 
 namespace FileManager
 {
@@ -37,6 +38,12 @@ namespace FileManager
         //存放搜索结果的List
         List<SearchInfo> searchInfoList = new List<SearchInfo>();
 
+        //是否移动文件
+        private bool isMove = false;
+
+        //待复制并粘贴的文件\文件夹的源路径
+        private string[] copyFilesSourcePaths = new string[200];
+
         //主窗口显示
         public FileManage()
         {
@@ -44,7 +51,7 @@ namespace FileManager
             //System.Windows.Forms.Control.CheckForIllegalCrossThreadCalls = false;
         }
 
-        //界面导入显示
+        //界面初始显示状态
         private void FileManage_Load(object sender, EventArgs e)
         {
             //界面显示
@@ -53,19 +60,19 @@ namespace FileManager
             //设置本地磁盘C为默认点击状态
             deviceTreeView.SelectedNode = deviceTreeView.Nodes[1];
         }
-
+        //窗口大小变化时间响应
         private void FileManage_SizeChanged(object sender, EventArgs e)
         {
             tscbAddress.Width = this.Width - 350;
             toolStripOperator.Width = this.Width - 10;
         }
-
         private void FileManage_Resize(object sender, EventArgs e)
         {
             tscbAddress.Width = this.Width - 350;
             toolStripOperator.Width = this.Width - 10;
         }
 
+        //上方菜单栏事件，查看状态栏信息栏显示
         private void toolToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //设置工具栏是否可见
@@ -73,12 +80,61 @@ namespace FileManager
             //改变选中状态
             toolToolStripMenuItem.Checked = !toolToolStripMenuItem.Checked;
         }
-
         private void stateToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //下方状态栏是否可见。
             belowStatusStrip.Visible = !belowStatusStrip.Visible;
             stateToolStripMenuItem.Checked = !stateToolStripMenuItem.Checked;
+        }
+
+        //大图标
+        private void bigToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ResetViewChecks();
+            bigToolStripMenuItem.Checked = true;
+            cbigToolStripMenuItem.Checked = true;
+            fileListView.View = View.LargeIcon;
+        }
+        //小图标
+        private void smallToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ResetViewChecks();
+            smallToolStripMenuItem.Checked = true;
+            csmallToolStripMenuItem.Checked = true;
+            fileListView.View = View.SmallIcon;
+
+        }
+
+        //列表查看
+        private void listToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ResetViewChecks();
+            listToolStripMenuItem.Checked = true;
+            clistToolStripMenuItem.Checked = true;
+            fileListView.View = View.List;
+
+        }
+
+        //详细信息
+        private void moreInfoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ResetViewChecks();
+            moreInfoToolStripMenuItem.Checked = true;
+            cmoreToolStripMenuItem.Checked = true;
+            fileListView.View = View.Details;
+
+        }
+        //新建文件夹
+        private void newFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //菜单栏新建文件夹
+            CreateFolder();
+        }
+
+        //创建文件
+        private void newFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CreateFile();
         }
 
         //树节点展开
@@ -183,10 +239,95 @@ namespace FileManager
                 return;
             }
         }
+        //搜索按钮事件处理
+        private void tscbSearch_Enter(object sender, EventArgs e)
+        {
+            tscbSearch.Text = "";
+        }
 
+        private void tscbSearch_Leave(object sender, EventArgs e)
+        {
+            tscbSearch.Text = "快速搜索";
+        }
 
+        private void tscbSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            //开始文件搜索
 
+            //得到回车输入的文件名
+            if (e.KeyCode == Keys.Enter)
+            {
+                searchInfoList.Clear();
+                string enterFilename = tscbSearch.Text;
+                //判空
+                if (string.IsNullOrEmpty(enterFilename))
+                {
+                    //弹出对话框
+                    MessageBoxButtons messageBoxButtons = MessageBoxButtons.OK;
+                    DialogResult dialog = MessageBox.Show("正确输入搜索文件名", "提示", messageBoxButtons);
+                    return;
 
+                }
+
+                searchFileName = enterFilename;
+                Search(curFilePath);
+
+                ShowSearchRes();
+
+            }
+        }
+
+        //双击文件/文件夹时
+        private void fileListView_ItemActivate(object sender, EventArgs e)
+        {
+            this.OpenDictionaryFile();
+        }
+
+        private void ownerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //显示权限管理
+            ShowPrivilegeForm();
+        }
+        private void copyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //复制文件
+            CopyOperator();
+        }
+        private void pasteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //粘贴
+            PastOperator();
+        }
+        private void shearToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //剪切
+            CutOperator();
+        }
+        private void delToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //删除
+            DeleteOperator();
+        }
+
+        //Listview按钮操作
+        //刷新
+        private void crefreshToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ShowFilesList(curFilePath, false);
+        }
+
+        private void copenToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenDictionaryFile();
+        }
+
+        private void crenameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //文件重命名
+            RenameFile();
+        }
+
+        //显示文件到Listview中
         public void ShowFilesList(string path, bool isRecord)
         {
             
@@ -207,14 +348,13 @@ namespace FileManager
             //清空ListView
             fileListView.Items.Clear();
 
-#if true
             //如果当前为历史访问时
             if(path == @"最近访问")
             {
                 //得到最近访问文件/夹的枚举集合
                 var recentFile = RecentFilesUtil.GetRecentFiles();
 
-                //遍历，将文件显示到ListView
+                //遍历，将文件显示到ListView，使用异步委托进行处理
                 Action action = new Action(() =>
                 {
                     foreach (var file in recentFile)
@@ -346,10 +486,7 @@ namespace FileManager
                     MessageBox.Show(e.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
 
-            }
-#endif
-            
-
+            }    
             //更新当前路径
             curFilePath = path;
 
@@ -364,12 +501,8 @@ namespace FileManager
 
         }
 
-        //双击文件/文件夹时
-        private void fileListView_ItemActivate(object sender, EventArgs e)
-        {
-            this.OpenDictionaryFile();
-        }
 
+        //打开文件或文件夹
         public void OpenDictionaryFile()
         {
             if (fileListView.SelectedItems.Count > 0)
@@ -399,125 +532,6 @@ namespace FileManager
             }
         }
 
-        private void ShowHisFileTaskFunc()
-        {
-            //保存用户的历史访问路径
-            HistoryListNode newNode = new HistoryListNode();
-            newNode.Path = @"历史访问";
-            curPathNode.NextNode = newNode;
-            newNode.PreNode = curPathNode;
-
-            curPathNode = newNode;
-
-            //开始数据更新
-            fileListView.BeginUpdate();
-
-            //清空ListView
-            fileListView.Items.Clear();
-
-            //得到最近访问文件/夹的枚举集合
-            var recentFile = RecentFilesUtil.GetRecentFiles();
-
-            foreach (var file in recentFile)
-            {
-                if (File.Exists(file))
-                {
-                    //当为文件时
-                    FileInfo fileInfo = new FileInfo(file);
-
-                    ListViewItem item = fileListView.Items.Add(fileInfo.Name);
-
-                    //为exe文件或无拓展名
-                    if (fileInfo.Extension == ".exe" || fileInfo.Extension == "")
-                    {
-                        //通过当前系统获得文件相应图标
-                        Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
-
-                        //因为不同的exe文件一般图标都不相同，所以不能按拓展名存取图标，应按文件名存取图标
-                        fileImageList.Images.Add(fileInfo.Name, fileIcon);
-
-                        item.ImageKey = fileInfo.Name;
-                    }
-                    //其他文件
-                    else
-                    {
-                        if (!fileImageList.Images.ContainsKey(fileInfo.Extension))
-                        {
-                            Icon fileIcon = GetSystemIcon.GetIconByFileName(fileInfo.FullName);
-
-                            //因为类型（除了exe）相同的文件，图标相同，所以可以按拓展名存取图标
-                            fileImageList.Images.Add(fileInfo.Extension, fileIcon);
-                        }
-
-                        item.ImageKey = fileInfo.Extension;
-                    }
-                    //显示文件相关信息
-                    item.Tag = fileInfo.FullName;
-                    item.SubItems.Add(fileInfo.LastWriteTime.ToString());
-                    item.SubItems.Add(fileInfo.Extension + "文件");
-                    item.SubItems.Add(FileDetailInfoForm.ShowFileSize(fileInfo.Length).Split('(')[0]);
-                }
-                else if (Directory.Exists(file))
-                {
-                    //为目录时
-                    DirectoryInfo dirInfo = new DirectoryInfo(file);
-
-                    ListViewItem item = fileListView.Items.Add(dirInfo.Name, (int)IconsIndexes.Folder);
-                    item.Tag = dirInfo.FullName;
-                    item.SubItems.Add(dirInfo.LastWriteTime.ToString());
-                    item.SubItems.Add("文件夹");
-                    item.SubItems.Add("");
-                }
-            }
-            //更新当前路径
-            curFilePath = @"历史访问";
-
-            //更新地址栏
-            tscbAddress.Text = curFilePath;
-
-            //更新状态栏
-            belowTsslbNum.Text = fileListView.Items.Count + " 个项目";
-
-            //结束数据更新
-            fileListView.EndUpdate();
-        }
-
-        private void tscbSearch_Enter(object sender, EventArgs e)
-        {
-            tscbSearch.Text = "";
-        }
-
-        private void tscbSearch_Leave(object sender, EventArgs e)
-        {
-            tscbSearch.Text = "快速搜索";
-        }
-
-        private void tscbSearch_KeyDown(object sender, KeyEventArgs e)
-        {
-            //开始文件搜索
-
-            //得到回车输入的文件名
-            if (e.KeyCode == Keys.Enter)
-            {
-                searchInfoList.Clear();
-                string enterFilename = tscbSearch.Text;
-                //判空
-                if (string.IsNullOrEmpty(enterFilename))
-                {
-                    //弹出对话框
-                    MessageBoxButtons messageBoxButtons = MessageBoxButtons.OK;
-                    DialogResult dialog = MessageBox.Show("正确输入搜索文件名", "提示", messageBoxButtons);
-                    return;
-
-                }
-
-                searchFileName = enterFilename;
-                Search(curFilePath);
-
-                ShowSearchRes();
-
-            }
-        }
 
         private void ShowSearchRes()
         {
@@ -647,11 +661,7 @@ namespace FileManager
             }
         }
 
-        private void newFolderToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //菜单栏新建文件夹
-            CreateFolder();
-        }
+ 
 
         private void CreateFolder()
         {
@@ -689,11 +699,7 @@ namespace FileManager
             }
         }
 
-        //创建文件响应
-        private void newFileToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CreateFile();
-        }
+
         //创建文件
         private void CreateFile()
         {
@@ -738,9 +744,419 @@ namespace FileManager
 
         }
 
-        private void ownerToolStripMenuItem_Click(object sender, EventArgs e)
+        private void propertyToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            ShowPrivilegeForm();
+            //没有选中文件/文件夹
+            if(fileListView.SelectedItems.Count == 0)
+            {
+                if (curFilePath == "最近访问")
+                {
+                    MessageBox.Show("不能查看当前路径的属性！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                FileDetailInfoForm fileDetail = new FileDetailInfoForm(curFilePath);
+
+                fileDetail.Show();
+            }
+            else
+            {
+                //显示文件的详细信息
+                FileDetailInfoForm fileDetail = new FileDetailInfoForm(fileListView.SelectedItems[0].Tag.ToString());
+                fileDetail.Show();
+
+            }
+        }
+
+       
+        //复制操作
+        private void CopyOperator()
+        {
+            SetCopyFilesSourcePaths();
+        }
+
+        //获得待复制文件的源路径
+        private void SetCopyFilesSourcePaths()
+        {
+            if (fileListView.SelectedItems.Count > 0)
+            {
+                int i = 0;
+
+                foreach (ListViewItem item in fileListView.SelectedItems)
+                {
+                    copyFilesSourcePaths[i++] = item.Tag.ToString();
+                }
+
+                isMove = false;
+            }
+        }
+
+
+
+        //粘贴操作
+        private void PastOperator()
+        {
+            //没有待粘贴的文件
+            if (copyFilesSourcePaths[0] == null)
+            {
+                return;
+            }
+
+            //当前路径无效
+            if (!Directory.Exists(curFilePath))
+            {
+                return;
+            }
+
+            if (curFilePath == "最近访问")
+            {
+                MessageBox.Show("不能在当前路径下进行粘贴操作！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            for (int i = 0; copyFilesSourcePaths[i] != null; i++)
+            {
+                //如果是文件
+                if (File.Exists(copyFilesSourcePaths[i]))
+                {
+                    //执行文件的“移动到”或“复制到”
+                    MoveToOrCopyToFileBySourcePath(copyFilesSourcePaths[i]);
+                }
+                //如果是文件夹
+                else if (Directory.Exists(copyFilesSourcePaths[i]))
+                {
+                    //执行文件夹的“移动到”或“复制到”
+                    MoveToOrCopyToDirectoryBySourcePath(copyFilesSourcePaths[i]);
+                }
+
+            }
+
+            //在右边窗体显示文件列表
+            ShowFilesList(curFilePath, false);
+
+            //刷新左边的目录树
+            TreeViewShow.LoadChildNodes(curSelectedNode);
+
+            //置空
+            copyFilesSourcePaths = new string[200];
+
+        }
+
+        //执行文件的“移动到”或“复制到”
+        private void MoveToOrCopyToFileBySourcePath(string sourcePath)
+        {
+            try
+            {
+                FileInfo fileInfo = new FileInfo(sourcePath);
+
+                //获取目的路径
+                string destPath = Path.Combine(curFilePath, fileInfo.Name);
+
+                //如果目的路径和源路径相同，则不执行任何操作
+                if (destPath == sourcePath)
+                {
+                    return;
+                }
+
+                //移动文件到目的路径（当前是在执行“剪切+粘贴”操作）
+                if (isMove)
+                {
+                    fileInfo.MoveTo(destPath);
+                }
+                //粘贴文件到目的路径（当前是在执行“复制+粘贴”操作）
+                else
+                {
+                    fileInfo.CopyTo(destPath);
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+        }
+
+        //通过递归，复制并粘贴文件夹（包含文件夹下的所有文件）
+        private void CopyAndPasteDirectory(DirectoryInfo sourceDirInfo, DirectoryInfo destDirInfo)
+        {
+            //判断目标文件夹是否是源文件夹的子目录，是则给出错误提示，不进行任何操作
+            for (DirectoryInfo dirInfo = destDirInfo.Parent; dirInfo != null; dirInfo = dirInfo.Parent)
+            {
+                if (dirInfo.FullName == sourceDirInfo.FullName)
+                {
+                    MessageBox.Show("无法复制！目标文件夹是源文件夹的子目录！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+
+            //创建目标文件夹
+            if (!Directory.Exists(destDirInfo.FullName))
+            {
+                Directory.CreateDirectory(destDirInfo.FullName);
+            }
+
+            //复制文件并将文件粘贴到目标文件夹下
+            foreach (FileInfo fileInfo in sourceDirInfo.GetFiles())
+            {
+                fileInfo.CopyTo(Path.Combine(destDirInfo.FullName, fileInfo.Name));
+            }
+
+            //递归复制并将子文件夹粘贴到目标文件夹下
+            foreach (DirectoryInfo sourceSubDirInfo in sourceDirInfo.GetDirectories())
+            {
+                DirectoryInfo destSubDirInfo = destDirInfo.CreateSubdirectory(sourceSubDirInfo.Name);
+                CopyAndPasteDirectory(sourceSubDirInfo, destSubDirInfo);
+            }
+        }
+
+        //执行文件夹的“移动到”或“复制到”
+        private void MoveToOrCopyToDirectoryBySourcePath(string sourcePath)
+        {
+            try
+            {
+                DirectoryInfo sourceDirectoryInfo = new DirectoryInfo(sourcePath);
+
+                //获取目的路径
+                string destPath = Path.Combine(curFilePath, sourceDirectoryInfo.Name);
+
+                //如果目的路径和源路径相同，则不执行任何操作
+                if (destPath == sourcePath)
+                {
+                    return;
+                }
+
+                //移动文件夹到目的路径（当前是在执行“剪切+粘贴”操作）
+                if (isMove)
+                {
+                    //若使用sourceDirectoryInfo.MoveTo(destPath)，则不支持跨磁盘移动文件夹
+
+                    //通过递归，复制并粘贴文件夹（包含文件夹下的所有文件）
+                    CopyAndPasteDirectory(sourceDirectoryInfo, new DirectoryInfo(destPath));
+
+                    //删除源文件夹
+                    Directory.Delete(sourcePath, true);
+
+                }
+                //粘贴文件夹到目的路径（当前是在执行“复制+粘贴”操作）
+                else
+                {
+                    //通过递归，复制并粘贴文件夹（包含文件夹下的所有文件）
+                    CopyAndPasteDirectory(sourceDirectoryInfo, new DirectoryInfo(destPath));
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+
+        //剪切操作
+        private void CutOperator()
+        {
+            //获得待复制文件的源路径
+            SetCopyFilesSourcePaths();
+
+            //准备移动
+            isMove = true;
+        }
+
+
+        //删除操作
+        private void DeleteOperator()
+        {
+            if(fileListView.SelectedItems.Count > 0)
+            {
+                DialogResult dialogResult = MessageBox.Show("确定要删除吗？", "确认删除", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+
+                if (dialogResult == DialogResult.No)
+                {
+                    return;
+                }
+                else
+                {
+                    try
+                    {
+                        foreach (ListViewItem item in fileListView.SelectedItems)
+                        {
+                            string path = item.Tag.ToString();
+
+                            //如果是文件
+                            if (File.Exists(path))
+                            {
+                                File.Delete(path);
+                            }
+                            //如果是文件夹
+                            else if (Directory.Exists(path))
+                            {
+                                Directory.Delete(path, true);
+                            }
+
+                            fileListView.Items.Remove(item);
+                        }
+
+                        //刷新左边的目录树
+                       TreeViewShow.LoadChildNodes(curSelectedNode);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            
+        }
+
+        //初始化相关“查看”选项
+        private void InitViewChecks()
+        {
+            //默认右边窗体显示的是详细信息视图
+            toolToolStripMenuItem.Checked = true;
+            stateToolStripMenuItem.Checked = true;
+        }
+
+        //重置相关“查看”选项
+        private void ResetViewChecks()
+        {
+            bigToolStripMenuItem.Checked = false;
+            smallToolStripMenuItem.Checked = false;
+            listToolStripMenuItem.Checked = false;
+            moreInfoToolStripMenuItem.Checked = false;
+        }
+
+
+
+        private void RenameFile()
+        {
+            if (fileListView.SelectedItems.Count > 0)
+            {
+                //模拟进行编辑标签，实质是为了通过代码触发LabelEdit事件
+                fileListView.SelectedItems[0].BeginEdit();
+            }
+        }
+        //文件重命名
+        private void fileListView_AfterLabelEdit(object sender, LabelEditEventArgs e)
+        {
+            //获取新的名字
+            string name = e.Label;
+
+            //获得选中项
+            ListViewItem selectedItem = fileListView.SelectedItems[0];
+
+            if(string.IsNullOrEmpty(name))
+            {
+                MessageBox.Show("文件名不能为空！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                //显示时，恢复原来的标签
+                e.CancelEdit = true;
+            }
+            //标签没有改动
+            else if (name == null)
+            {
+                return;
+            }
+            //标签改动了，但是最终还是和原来一样
+            else if (name == selectedItem.Text)
+            {
+                return;
+            }
+            //文件名不合法
+            else if (!IsValidFileName(name))
+            {
+                MessageBox.Show("文件名不能包含下列任何字符:\r\n" + "\t\\/:*?\"<>|", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                //显示时，恢复原来的标签
+                e.CancelEdit = true;
+            }
+            else
+            {
+                //开始重命名
+                //Computr操纵文件系统
+                Computer myComputer = new Computer();
+
+                //重名的是文件
+                if(File.Exists(selectedItem.Tag.ToString()))
+                {
+                    //若包含重复文件, 则添加后缀
+                    if(File.Exists(Path.Combine(curFilePath, name)))
+                    {
+                        int num = 1;
+                        string newName = Path.Combine(curFilePath, name);
+                        string reName = name;
+                        while(File.Exists(newName))
+                        {
+                            newName = newName + "(" + num + ")";
+                            reName = name + "(" + num + ")";
+                            num++;
+                        }
+                        name = reName;
+                    }
+                    //重命名文件
+                    myComputer.FileSystem.RenameFile(selectedItem.Tag.ToString(), name);
+                    //更新显示
+                    FileInfo fileInfo = new FileInfo(selectedItem.Tag.ToString());
+                    string parentPath = Path.GetDirectoryName(fileInfo.FullName);
+                    string newPath = Path.Combine(parentPath, name);
+
+                    //更新选中项的Tag
+                    selectedItem.Tag = newPath;
+
+                    //刷新左边的目录树
+                    TreeViewShow.LoadChildNodes(curSelectedNode);
+                }
+                else if(Directory.Exists(selectedItem.Tag.ToString()))
+                {
+                    //重命名的是文件夹
+                    //存在重复名情况
+                    if (Directory.Exists(Path.Combine(curFilePath, name)))
+                    {
+                        int num = 1;
+                        string newName = Path.Combine(curFilePath, name);
+                        string reName = name;
+                        while (File.Exists(newName))
+                        {
+                            newName = newName + "(" + num + ")";
+                            reName = name + "(" + num + ")";
+                            num++;
+                        }
+                        name = reName;
+                    }
+                    
+                    //更新名字
+                    myComputer.FileSystem.RenameDirectory(selectedItem.Tag.ToString(), name);
+
+                    DirectoryInfo directoryInfo = new DirectoryInfo(selectedItem.Tag.ToString());
+                    string parentPath = directoryInfo.Parent.FullName;
+                    string newPath = Path.Combine(parentPath, name);
+
+                    //更新选中项的Tag
+                    selectedItem.Tag = newPath;
+
+                    //刷新左边的目录树
+                    TreeViewShow.LoadChildNodes(curSelectedNode);
+
+                }
+            }
+            //刷新显示
+            ShowFilesList(curFilePath, false);
+        }
+
+        private bool IsValidFileName(string fileName)
+        {
+            bool isValid = true;
+
+            //非法字符
+            string errChar = "\\/:*?\"<>|";
+
+            for (int i = 0; i < errChar.Length; i++)
+            {
+                if (fileName.Contains(errChar[i].ToString()))
+                {
+                    isValid = false;
+                    break;
+                }
+            }
+            return isValid;
         }
     }
 }

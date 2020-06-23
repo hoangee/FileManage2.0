@@ -119,7 +119,7 @@ namespace FileManager
         private void ShowPrivilegeList()
         {
             isUpdateCheckBoxes = true;
-
+            //权限ListView上方显示对那个用户、组的权限
             labelPrivilege.Text = lvGroup.Items[curSelected].Text + " 的权限：";
 
             lvPrivilge.Items.Clear();
@@ -134,7 +134,7 @@ namespace FileManager
                 item.Tag = i;
             }
 
-
+            //初始设置选中状态
             for (int i = 0; i < privilegeList.Count; i++)
             {
                 if (privileges.Contains(privilegeFlagsList[i]))
@@ -167,7 +167,7 @@ namespace FileManager
                     break;
 
                 case "Modify":
-
+                    //修改选中三个
                     foreach (ListViewItem item in lvPrivilge.Items)
                     {
                         if (item.Text == "修改" || item.Text == "读取和执行" || item.Text == "读取" || item.Text == "写入")
@@ -241,7 +241,7 @@ namespace FileManager
                     break;
             }
         }
-
+        //点击确定按钮
         private void buttonPrivilegeY_Click(object sender, EventArgs e)
         {
             this.Close();
@@ -277,8 +277,10 @@ namespace FileManager
 
                         isUpdateCheckBoxes = false;
 
+                        //修改权限
                         if (File.Exists(fileName))
                         {
+                            
                             AddFileSecurity(fileName, accessRulesArray[curSelected].IdentityReference.Translate(typeof(NTAccount)).ToString(),
                                 fileSystemRightsList[(int)e.Item.Tag], AccessControlType.Allow);
                         }
@@ -291,6 +293,7 @@ namespace FileManager
                 }
                 else
                 {
+                    //取消权限
                     isUpdateCheckBoxes = true;
 
                     //设置权限列表中当前选中项和其“包含”的选项的未选中状态

@@ -12,11 +12,12 @@ namespace FileManager
 {
     public partial class FileDetailInfoForm : Form
     {
-        public FileDetailInfoForm()
+        public FileDetailInfoForm(string filePath)
         {
             InitializeComponent();
 
             //初始化界面
+            InitDisplay(filePath);
         }
 
         private void btnConfirm_Click(object sender, EventArgs e)
